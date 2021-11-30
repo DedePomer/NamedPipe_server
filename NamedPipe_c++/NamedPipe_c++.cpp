@@ -7,6 +7,8 @@
 
 DWORD LpwstrToDword(LPWSTR);
 BOOL ItsNumber(LPSTR);
+LPSTR DwordToLpstr(DWORD);
+LPSTR ReverseStr(LPSTR);
 
 int main()
 {   
@@ -31,15 +33,23 @@ int main()
                 if (ItsNumber(bufferString))
                 {
                     kv = pow((float)LpwstrToDword(bufferString),2);
-                    sprintf(mass, "%d", kv);
+                    //sprintf(mass, "%d", kv);
+                    if (kv == 0 )
+                    {
+                        mass = "0";
+                    }
+                    else
+                    {
+                        mass = DwordToLpstr(kv);
+                    }                    
                     WriteFile(hPipe, mass, 200, &n, NULL);
-                    mass = "";
+                    mass = "0";
                 }
                 else
                 {
                     mass = "Ничего";
                     WriteFile(hPipe, mass, 200, &n, NULL);
-                    mass = "";
+                    mass = "0";
                 }                
             }
         }
@@ -54,17 +64,59 @@ int main()
 DWORD LpwstrToDword(LPSTR str)
 {
     DWORD dw = 0;
-    for (size_t i = 0; i < wcslen(str); i++)
+    if (str[0] != '-')
     {
-        dw += (str[i] - '0');
-        dw *= 10;
+        for (size_t i = 0; i < strlen(str); i++)
+        {
+            dw += (str[i] - '0');
+            dw *= 10;
+        }
+        return dw / 10;
     }
-    return dw / 10;
+    else
+    {
+        for (size_t i = 1; i < strlen(str); i++)
+        {
+            dw += (str[i] - '0');
+            dw *= 10;
+        }
+        return dw / 10;
+    }
+    
+}
+
+LPSTR DwordToLpstr(DWORD num)
+{
+    LPSTR str = calloc(200, sizeof(CHAR));
+    char c = ' ';
+    DWORD n = num, m = 0;
+    int y = 0;
+    for (int i = 10; num % (i/10) != num; i *= 10)
+    {
+        m = n % i;
+        m = m / (i / 10);
+        c = 48 + m;
+        str[y] = c;
+        y++;
+    }
+    return ReverseStr(str);
+}
+
+LPSTR ReverseStr (LPSTR str)
+{
+    LPSTR strBuff = calloc(200, sizeof(CHAR));
+    int y = 0;
+    for (int i = strlen(str)-1; i >= 0; i--)
+    {
+        strBuff[y] = str[i];
+        y++;
+    }
+    return strBuff;
 }
 
 BOOL ItsNumber(LPSTR str)
 {
-    int i = 0, c = 0;
+    int i = 0, c = 0,m = 1;
     while (1)
     {
         if (str[i]=='\0')
@@ -85,10 +137,21 @@ BOOL ItsNumber(LPSTR str)
         case '9':
             c++;
             break;
+        case '-':
+            if (i==0)
+            {
+                m = 1;
+            }
+            else
+            {
+                m = -1;
+            }
+            c++;
+            break;
         }
         i++;
     }
-    if (c == strlen(str))
+    if (c == strlen(str) && m == 1)
     {
         return TRUE;
     }
