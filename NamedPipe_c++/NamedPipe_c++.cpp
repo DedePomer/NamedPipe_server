@@ -3,6 +3,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
 #define PATH_PIPE L"\\\\.\\pipe\\MyPipe"
 
 DWORD LpwstrToDword(LPWSTR);
@@ -13,7 +14,9 @@ LPSTR ReverseStr(LPSTR);
 int main()
 {   
     system("chcp 1251");
-    printf("Сервер\n");    
+    printf("Сервер\n"); 
+    time_t rawtime;
+    struct tm* timeinfo;        
     BOOL Connected;
     HANDLE hPipe;
     DWORD n, kv;
@@ -27,13 +30,14 @@ int main()
         Connected = ConnectNamedPipe(hPipe, NULL);
         if (Connected)
         {
-            printf("\nПодключение установленно\n");
+            time(&rawtime);
+            timeinfo = localtime(&rawtime);
+            printf("Подключение установленно %s\n", asctime(timeinfo));
             if (ReadFile(hPipe, bufferString, 200, &n, NULL))
             {
                 if (ItsNumber(bufferString))
                 {
                     kv = pow((float)LpwstrToDword(bufferString),2);
-                    //sprintf(mass, "%d", kv);
                     if (kv == 0 )
                     {
                         mass = "0";
@@ -41,7 +45,7 @@ int main()
                     else
                     {
                         mass = DwordToLpstr(kv);
-                    }                    
+                    }    
                     WriteFile(hPipe, mass, 200, &n, NULL);
                     mass = "0";
                 }
@@ -52,6 +56,14 @@ int main()
                     mass = "0";
                 }                
             }
+            else
+            {
+                printf("Пользователь отключился\n");
+            }
+        }
+        else
+        {
+            printf("Канал исчез\n");
         }
         CloseHandle(hPipe);
     }
@@ -81,8 +93,7 @@ DWORD LpwstrToDword(LPSTR str)
             dw *= 10;
         }
         return dw / 10;
-    }
-    
+    }   
 }
 
 LPSTR DwordToLpstr(DWORD num)
